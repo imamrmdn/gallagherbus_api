@@ -8,46 +8,47 @@ use App\Models\KoridorModel;
 use DB;
 
 class JadwalController extends Controller
-{    
+{
     //
-    function algorithm_greedy($req) {
+    function algorithm_greedy($req)
+    {
 
         // Pengurutan jadwal di setiap halte berdasarkan arrival_time_bus
-        foreach ($req['koridor_schedule'] as $schedule) {
-            usort($schedule['schedule_koridor'], function($a, $b) {
+        foreach ($req['koridor_schedule'] as &$schedule) {
+            usort($schedule['schedule_koridor'], function ($a, $b) {
                 return strcmp($a['arrival_time_bus'], $b['arrival_time_bus']);
             });
         }
-    
+
         // Mengurutkan data halte berdasarkan arrival_time_in_halte
         usort($req['koridor_schedule'], function ($a, $b) {
             return strcmp($a['arrival_time_in_halte'], $b['arrival_time_in_halte']);
         });
-    
+
         // Memanipulasi jadwal bus agar tidak bentrok
         foreach ($req['koridor_schedule'] as &$schedule) {
             $scheduledBuses = [];
             $scheduledBuses[] = $schedule['schedule_koridor'][0];
-    
+
             $lastBusIndex = 0;
             $totalBuses = count($schedule['schedule_koridor']);
-    
+
             for ($i = 1; $i < $totalBuses; $i++) {
                 $currentBus = $schedule['schedule_koridor'][$i];
                 $lastScheduledBus = $scheduledBuses[$lastBusIndex];
-    
+
                 if ($currentBus['arrival_time_bus'] >= $lastScheduledBus['departure_time_bus']) {
                     $scheduledBuses[] = $currentBus;
                     $lastBusIndex = $i;
                 }
             }
-    
+
             $schedule['schedule_koridor'] = $scheduledBuses;
         }
-    
+
         return $req;
     }
-    
+
 
     //
     public function proccess_to_algorithm(Request $request)
@@ -107,7 +108,7 @@ class JadwalController extends Controller
 
             } else {
                 DB::rollBack();
-                
+
                 return [
                     "success" => false,
                     "status" => 500,
@@ -164,30 +165,62 @@ class JadwalController extends Controller
 
             $modelKoridors = null;
 
-            if (empty($all)) {
-                $modelKoridors = DB::table('koridors')->where('koridor_name', $koridor_name)->select(['id', 'koridor_name'])->get();
-                $message = "Success get koridor name";
+            // cek if koridors is exist
+            $findKoridorName = DB::table('koridors')->where('koridor_name', $koridor_name)->select(['koridor_name'])->get();
+
+            if (!$findKoridorName->isEmpty()) {
+                if (empty($all)) {
+                    $modelKoridors = DB::table('koridors')->where('koridor_name', $koridor_name)->select(['id', 'koridor_name'])->get();
+                    $message = "Success get koridor name";
+                } else {
+                    $modelKoridors = KoridorModel::with([
+                        'halte' => function ($query) {
+                            $query->with(['halte_schedule'])->get();
+                        }
+                    ])->where('koridor_name', $koridor_name)->select(['id', 'koridor_name'])->get();
+                    $message = "Success get koridor";
+                }
+
+                if (empty($modelKoridors))
+                    $message = "Data koridors not found";
+
+                //
+                return [
+                    "success" => true,
+                    "status" => 200,
+                    "message" => $message,
+                    "data" => $modelKoridors
+                ];
             } else {
-                $modelKoridors = KoridorModel::with([
-                    'halte' => function ($query) {
-                        $query->with(['halte_schedule'])->get();
-                    }
-                ])->where('koridor_name', $koridor_name)->select(['id', 'koridor_name'])->get();
-                $message = "Success get koridor";
+                //
+                return [
+                    "success" => false,
+                    "status" => 500,
+                    "message" => 'Koridors not found',
+                    "data" => []
+                ];
             }
 
-            if (empty($modelKoridors))
-                $message = "Data koridors not found";
+        } catch (\Throwable $th) {
+            return $th->getMessage();
+        }
+    }
 
-            //
+    //
+    public function get_all_koridor_name(Request $request){
+        try {
+            //code...
+            $data = DB::table('koridors')->select(['id', 'koridor_name'])->get();
+
             return [
                 "success" => true,
                 "status" => 200,
-                "message" => $message,
-                "data" => $modelKoridors
+                "message" => 'Success get all koridor name',
+                "data" => $data
             ];
 
         } catch (\Throwable $th) {
+            //throw $th;
             return $th->getMessage();
         }
     }

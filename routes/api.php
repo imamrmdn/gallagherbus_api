@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\InformasiController;
@@ -32,6 +31,9 @@ Route::prefix('jadwal')->group(function () {
 
     // route get koridor
     Route::get('get_koridor', [JadwalController::class, 'get_koridor']);
+
+    // route get all koridor name
+    Route::get('get_all_koridor_name', [JadwalController::class, 'get_all_koridor_name']);
 
 });
 
