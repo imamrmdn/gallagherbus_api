@@ -1,6 +1,9 @@
 <?php
 
+
 use Illuminate\Support\Facades\Route;
+
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\InformasiController;
 
@@ -16,9 +19,13 @@ use App\Http\Controllers\InformasiController;
 */
 
 //
-// Route::middleware('auth:api')->get('/user', function (Request $request) {
-//     return $request->user();
-// });
+Route::post('register', [AuthController::class, 'register']);
+Route::post('login', [AuthController::class, 'login']);
+
+//
+Route::group(['middleware' => 'auth:api'], function () {
+    Route::post('edit_profile', [AuthController::class, 'edit_profile']);
+});
 
 //
 Route::prefix('jadwal')->group(function () {

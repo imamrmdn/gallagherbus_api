@@ -109,16 +109,21 @@ class JadwalController extends Controller
             } else {
                 DB::rollBack();
 
-                return [
+                $responseError = [
                     "success" => false,
                     "status" => 500,
                     "message" => "Failed Process Data to Algorithm Greedy"
                 ];
+
+                return response()->json($responseError, 500);
             }
 
         } catch (\Throwable $th) {
             DB::rollBack();
-            return $th->getMessage();
+            return [
+                "success" => false,
+                "message" => $th->getMessage()
+            ];
         }
 
     }
@@ -143,7 +148,10 @@ class JadwalController extends Controller
             ];
 
         } catch (\Throwable $th) {
-            return $th->getMessage();
+            return [
+                "success" => false,
+                "message" => $th->getMessage()
+            ];
         }
 
     }
@@ -193,21 +201,27 @@ class JadwalController extends Controller
                 ];
             } else {
                 //
-                return [
+                $responseError = [
                     "success" => false,
                     "status" => 500,
                     "message" => 'Koridors not found',
                     "data" => []
                 ];
+
+                return response()->json($responseError, 500);
             }
 
         } catch (\Throwable $th) {
-            return $th->getMessage();
+            return [
+                "success" => false,
+                "message" => $th->getMessage()
+            ];
         }
     }
 
     //
-    public function get_all_koridor_name(Request $request){
+    public function get_all_koridor_name(Request $request)
+    {
         try {
             //code...
             $data = DB::table('koridors')->select(['id', 'koridor_name'])->get();
@@ -221,7 +235,10 @@ class JadwalController extends Controller
 
         } catch (\Throwable $th) {
             //throw $th;
-            return $th->getMessage();
+            return [
+                "success" => false,
+                "message" => $th->getMessage()
+            ];
         }
     }
 
