@@ -12,41 +12,47 @@ class JadwalController extends Controller
     //
     function algorithm_greedy($req)
     {
-
-        // Pengurutan jadwal di setiap halte berdasarkan arrival_time_bus
-        foreach ($req['koridor_schedule'] as &$schedule) {
-            usort($schedule['schedule_koridor'], function ($a, $b) {
-                return strcmp($a['arrival_time_bus'], $b['arrival_time_bus']);
-            });
-        }
-
-        // Mengurutkan data halte berdasarkan arrival_time_in_halte
-        usort($req['koridor_schedule'], function ($a, $b) {
-            return strcmp($a['arrival_time_in_halte'], $b['arrival_time_in_halte']);
-        });
-
-        // Memanipulasi jadwal bus agar tidak bentrok
-        foreach ($req['koridor_schedule'] as &$schedule) {
-            $scheduledBuses = [];
-            $scheduledBuses[] = $schedule['schedule_koridor'][0];
-
-            $lastBusIndex = 0;
-            $totalBuses = count($schedule['schedule_koridor']);
-
-            for ($i = 1; $i < $totalBuses; $i++) {
-                $currentBus = $schedule['schedule_koridor'][$i];
-                $lastScheduledBus = $scheduledBuses[$lastBusIndex];
-
-                if ($currentBus['arrival_time_bus'] >= $lastScheduledBus['departure_time_bus']) {
-                    $scheduledBuses[] = $currentBus;
-                    $lastBusIndex = $i;
-                }
+        try {
+            //code...
+            // Pengurutan jadwal di setiap halte berdasarkan arrival_time_bus
+            foreach ($req['koridor_schedule'] as &$schedule) {
+                usort($schedule['schedule_koridor'], function ($a, $b) {
+                    return strcmp($a['arrival_time_bus'], $b['arrival_time_bus']);
+                });
             }
 
-            $schedule['schedule_koridor'] = $scheduledBuses;
-        }
+            // Mengurutkan data halte berdasarkan arrival_time_in_halte
+            usort($req['koridor_schedule'], function ($a, $b) {
+                return strcmp($a['arrival_time_in_halte'], $b['arrival_time_in_halte']);
+            });
 
-        return $req;
+            // Memanipulasi jadwal bus agar tidak bentrok
+            foreach ($req['koridor_schedule'] as &$schedule) {
+                $scheduledBuses = [];
+                $scheduledBuses[] = $schedule['schedule_koridor'][0];
+
+                $lastBusIndex = 0;
+                $totalBuses = count($schedule['schedule_koridor']);
+
+                for ($i = 1; $i < $totalBuses; $i++) {
+                    $currentBus = $schedule['schedule_koridor'][$i];
+                    $lastScheduledBus = $scheduledBuses[$lastBusIndex];
+
+                    if ($currentBus['arrival_time_bus'] >= $lastScheduledBus['departure_time_bus']) {
+                        $scheduledBuses[] = $currentBus;
+                        $lastBusIndex = $i;
+                    }
+                }
+
+                $schedule['schedule_koridor'] = $scheduledBuses;
+            }
+
+            return $req;
+
+        } catch (\Throwable $th) {
+            //throw $th;
+            return $th->getMessage();
+        }
     }
 
 
@@ -125,7 +131,6 @@ class JadwalController extends Controller
                 "message" => $th->getMessage()
             ];
         }
-
     }
 
     //
@@ -140,12 +145,24 @@ class JadwalController extends Controller
                 }
             ])->select(['id', 'koridor_name'])->get();
 
-            return [
-                "success" => true,
-                "status" => 200,
-                "message" => "Success get jadwal all koridor",
-                "data" => $modelKoridors
-            ];
+            if (!$modelKoridors->isEmpty()) {
+
+                return response()->json([
+                    "success" => true,
+                    "status" => 200,
+                    "message" => "Success get jadwal all koridor",
+                    "data" => $modelKoridors
+                ], 200);
+
+            } else {
+                return response()->json([
+                    "success" => false,
+                    "status" => 404,
+                    "message" => "Jadwal koridor not yet",
+                    "data" => $modelKoridors
+                ], 404);
+            }
+
 
         } catch (\Throwable $th) {
             return [
@@ -193,12 +210,15 @@ class JadwalController extends Controller
                     $message = "Data koridors not found";
 
                 //
-                return [
+                $responseSuccess = [
                     "success" => true,
                     "status" => 200,
                     "message" => $message,
                     "data" => $modelKoridors
                 ];
+
+                return response()->json($responseSuccess, 200);
+
             } else {
                 //
                 $responseError = [
