@@ -51,7 +51,10 @@ class JadwalController extends Controller
 
         } catch (\Throwable $th) {
             //throw $th;
-            return $th->getMessage();
+            return [
+                'success' => false,
+                'message' => $th->getMessage()
+            ];
         }
     }
 
@@ -223,12 +226,12 @@ class JadwalController extends Controller
                 //
                 $responseError = [
                     "success" => false,
-                    "status" => 500,
+                    "status" => 404,
                     "message" => 'Koridors not found',
                     "data" => []
                 ];
 
-                return response()->json($responseError, 500);
+                return response()->json($responseError, 200);
             }
 
         } catch (\Throwable $th) {
@@ -244,7 +247,7 @@ class JadwalController extends Controller
     {
         try {
             //code...
-            $data = DB::table('koridors')->select(['id', 'koridor_name'])->get();
+            $data = DB::table('koridors')->select(['id', 'koridor_name'])->orderBy('created_at', 'desc')->get();
 
             return [
                 "success" => true,

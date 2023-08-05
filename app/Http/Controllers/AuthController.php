@@ -20,7 +20,7 @@ class AuthController extends Controller
             'name' => 'required|string',
             'email' => 'required|string|email|unique:users',
             'alamat' => 'string',
-            'tanggal_lahir' => 'required|date',
+            'tanggal_lahir' => 'date',
             'password' => 'required|string|min:6',
         ]);
 
@@ -38,7 +38,7 @@ class AuthController extends Controller
                     'name' => $request->name,
                     'email' => $request->email,
                     'alamat' => $request->alamat,
-                    'tanggal_lahir' => $request->tanggal_lahir,
+                    'tanggal_lahir' => $request->tanggal_lahir ?? '2023-01-01',
                     'password' => bcrypt($request->password),
                 ]);
 
@@ -69,14 +69,14 @@ class AuthController extends Controller
     {
 
         $request->validate([
-            'email' => 'required|string|email',
+            'name' => 'required|string',
             'password' => 'required|string',
         ]);
 
         //
         try {
             //code...
-            $credentials = $request->only('email', 'password');
+            $credentials = $request->only('name', 'password');
 
             if (Auth::attempt($credentials)) {
                 $user = Auth::user();
@@ -119,10 +119,31 @@ class AuthController extends Controller
         }
     }
 
-    public function edit_profile(Request $request){
+    public function get_profile()
+    {
+        try {
+            //code...
+            $user = Auth::user();
+
+            $response = $user;
+
+            return response()->json($response, 200);
+
+        } catch (\Throwable $th) {
+            //throw $th;
+            return [
+                "success" => false,
+                "message" => $th->getMessage()
+            ];
+        }
+    }
+
+    public function edit_profile(Request $request)
+    {
 
         $request->validate([
             'nama' => 'required|string',
+            'email' => 'string|email'
         ]);
 
         //
@@ -130,13 +151,14 @@ class AuthController extends Controller
             //code...
             $user = Auth::user();
             $user->name = $request->nama;
+            $user->email = $request->email;
             $user->save();
 
             $response = [
                 'success' => true,
                 'message' => 'Profile updated successfully'
             ];
-        
+
             return response()->json($response, 200);
 
         } catch (\Throwable $th) {
