@@ -247,7 +247,7 @@ class JadwalController extends Controller
     {
         try {
             //code...
-            $data = DB::table('koridors')->select(['id', 'koridor_name'])->orderBy('created_at', 'desc')->get();
+            $data = DB::table('koridors')->select(['id', 'koridor_name'])->orderBy('koridor_name', 'asc')->get();
 
             return [
                 "success" => true,
